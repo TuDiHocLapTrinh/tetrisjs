@@ -30,8 +30,37 @@ class Board {
   generateWhiteBoard() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(WHITE_COLOR_ID));
   }
+
+  drawCell(xAxis, yAxis, colorId) {
+    this.ctx.fillStyle =
+      COLOR_MAPPING[colorId] || COLOR_MAPPING[WHITE_COLOR_ID];
+    this.ctx.fillRect(
+      xAxis * BLOCK_SIZE,
+      yAxis * BLOCK_SIZE,
+      BLOCK_SIZE,
+      BLOCK_SIZE
+    );
+    this.ctx.fillStyle = "black";
+    this.ctx.strokeRect(
+      xAxis * BLOCK_SIZE,
+      yAxis * BLOCK_SIZE,
+      BLOCK_SIZE,
+      BLOCK_SIZE
+    );
+  }
+
+  drawBoard() {
+    for (let row = 0; row < this.grid.length; row++) {
+      for (let col = 0; col < this.grid[0].length; col++) {
+        this.drawCell(col, row, WHITE_COLOR_ID);
+      }
+    }
+  }
 }
 
-board = new Board();
+board = new Board(ctx);
+board.drawBoard();
+
+//board.drawCell(1, 1, 1);
 
 console.table(board.grid);
