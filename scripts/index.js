@@ -224,7 +224,7 @@ class Board {
   drawBoard() {
     for (let row = 0; row < this.grid.length; row++) {
       for (let col = 0; col < this.grid[0].length; col++) {
-        this.drawCell(col, row, WHITE_COLOR_ID);
+        this.drawCell(col, row, this.grid[row][col]);
       }
     }
   }
@@ -298,14 +298,19 @@ class Brick {
       this.clear();
       this.rowPos++;
       this.draw();
+
+      return;
     }
+
+    this.handleLanded(this.layout[this.activeIndex]);
+    generateNewBrick();
   }
 
   rotate() {
     if (
       !this.checkCollision(
         this.rowPos,
-        this.colPos - 1,
+        this.colPos,
         this.layout[(this.activeIndex + 1) % 4]
       )
     ) {
@@ -330,7 +335,8 @@ class Brick {
           if (
             col + nextCol < 0 ||
             col + nextCol >= COLS ||
-            row + nextRow >= ROWS
+            row + nextRow >= ROWS ||
+            board.grid[row + nextRow][col + nextCol] !== WHITE_COLOR_ID
           )
             return true;
         }
@@ -338,14 +344,35 @@ class Brick {
     }
     return false;
   }
+
+  handleLanded(nextlayout) {
+    for (let row = 0; row < nextlayout.length; row++) {
+      for (let col = 0; col < nextlayout[0].length; col++) {
+        if (nextlayout[row][col] !== WHITE_COLOR_ID) {
+          board.grid[row + this.rowPos][col + this.colPos] = this.id;
+        }
+      }
+    }
+
+    board.drawBoard();
+  }
+}
+
+function generateNewBrick() {
+  brick = new Brick(Math.floor(Math.random() * 10) % BRICK_LAYOUT.length); // tao ra 1 id bat ki nam tu 0 -> 6
 }
 
 board = new Board(ctx);
 board.drawBoard();
-brick = new Brick(0);
-brick.draw();
+
+generateNewBrick();
+//brick.draw();
 
 //board.drawCell(1, 1, 1);
+
+setInterval(() => {
+  brick.moveDown();
+}, 1000);
 
 document.addEventListener("keydown", (e) => {
   switch (e.code) {
