@@ -230,6 +230,7 @@ class Board {
   }
 }
 
+<<<<<<< HEAD
 class Brick {
   constructor(id) {
     this.id = id;
@@ -363,5 +364,11 @@ document.addEventListener("keydown", (e) => {
       break;
   }
 });
+=======
+board = new Board(ctx);
+board.drawBoard();
+
+//board.drawCell(1, 1, 1);
+>>>>>>> 4dcd16804367e6c404d2707a3ddb3df6b7b2b833
 
 console.table(board.grid);
