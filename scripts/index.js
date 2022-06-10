@@ -391,4 +391,9 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+board = new Board(ctx);
+board.drawBoard();
+
+//board.drawCell(1, 1, 1);
+
 console.table(board.grid);
