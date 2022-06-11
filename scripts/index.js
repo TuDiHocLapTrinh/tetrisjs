@@ -185,6 +185,13 @@ const KEY_CODE = {
   DOWN: "ArrowDown",
 };
 
+const GAME_SOUND = {
+  MOVE: "https://tudihoclaptrinh.github.io/tetrisjs/sound/move.wav",
+  NEWSCORE: "https://tudihoclaptrinh.github.io/tetrisjs/sound/new-score.wav",
+  GAMEOVER: "https://tudihoclaptrinh.github.io/tetrisjs/sound/gameover.wav",
+  LANDED: "https://tudihoclaptrinh.github.io/tetrisjs/sound/landed.wav",
+};
+
 const WHITE_COLOR_ID = 7;
 
 const canvas = document.getElementById("board");
@@ -197,6 +204,13 @@ class Board {
   constructor(ctx) {
     this.ctx = ctx;
     this.grid = this.generateWhiteBoard();
+    this.score = 0;
+    this.gameover = false;
+    this.isPlaying = false;
+    this.moveSound = new Audio(GAME_SOUND.MOVE);
+    this.newScoreSound = new Audio(GAME_SOUND.NEWSCORE);
+    this.gameoverSound = new Audio(GAME_SOUND.GAMEOVER);
+    this.landedSound = new Audio(GAME_SOUND.LANDED);
   }
 
   generateWhiteBoard() {
@@ -228,6 +242,43 @@ class Board {
       }
     }
   }
+
+  handleCompleteRows() {
+    const latestGrid = board.grid.filter((row) => {
+      return row.some((col) => col === WHITE_COLOR_ID);
+    });
+
+    const newScore = ROWS - latestGrid.length;
+    const newRows = Array.from({ length: newScore }, () =>
+      Array(COLS).fill(WHITE_COLOR_ID)
+    );
+    board.grid = [...newRows, ...latestGrid];
+
+    this.handleScore(newScore * 10);
+  }
+
+  handleScore(newScore) {
+    if (newScore !== 0) {
+      this.score += newScore;
+      this.newScoreSound.play();
+      document.getElementById("score").innerHTML = this.score;
+    } else {
+      this.landedSound.play();
+    }
+  }
+
+  async handleGameOver() {
+    await this.gameoverSound.play();
+    this.isPlaying = false;
+    this.gameover = true;
+    alert("GAME OVER !!!");
+  }
+
+  reset() {
+    this.score = 0;
+    this.grid = this.generateWhiteBoard();
+    this.gameover = false;
+  }
 }
 
 class Brick {
@@ -236,7 +287,7 @@ class Brick {
     this.layout = BRICK_LAYOUT[id];
     this.activeIndex = 0;
     this.colPos = 3;
-    this.rowPos = 3;
+    this.rowPos = -2;
   }
 
   draw() {
@@ -303,7 +354,10 @@ class Brick {
     }
 
     this.handleLanded(this.layout[this.activeIndex]);
-    generateNewBrick();
+
+    if (!board.gameover) {
+      generateNewBrick();
+    }
   }
 
   rotate() {
@@ -331,7 +385,7 @@ class Brick {
   checkCollision(nextRow, nextCol, nextlayout) {
     for (let row = 0; row < nextlayout.length; row++) {
       for (let col = 0; col < nextlayout[0].length; col++) {
-        if (nextlayout[row][col] !== WHITE_COLOR_ID) {
+        if (nextlayout[row][col] !== WHITE_COLOR_ID && nextRow >= 0) {
           if (
             col + nextCol < 0 ||
             col + nextCol >= COLS ||
@@ -346,6 +400,11 @@ class Brick {
   }
 
   handleLanded(nextlayout) {
+    if (this.rowPos <= 0) {
+      board.handleGameOver();
+      return;
+    }
+
     for (let row = 0; row < nextlayout.length; row++) {
       for (let col = 0; col < nextlayout[0].length; col++) {
         if (nextlayout[row][col] !== WHITE_COLOR_ID) {
@@ -354,6 +413,7 @@ class Brick {
       }
     }
 
+    board.handleCompleteRows();
     board.drawBoard();
   }
 }
@@ -365,16 +425,32 @@ function generateNewBrick() {
 board = new Board(ctx);
 board.drawBoard();
 
-generateNewBrick();
+document.getElementById("play-btn").addEventListener("click", () => {
+  board.reset();
+
+  board.drawBoard();
+  generateNewBrick();
+
+  board.isPlaying = true;
+
+  const refresh = setInterval(() => {
+    if (!board.gameover) {
+      board.moveSound.play();
+      brick.moveDown();
+    } else {
+      clearInterval(refresh);
+    }
+  }, 1000);
+});
 //brick.draw();
 
 //board.drawCell(1, 1, 1);
 
-setInterval(() => {
-  brick.moveDown();
-}, 1000);
-
 document.addEventListener("keydown", (e) => {
+  if (board.gameover && !board.isPlaying) {
+    return;
+  }
+  board.moveSound.play();
   switch (e.code) {
     case KEY_CODE.LEFT:
       brick.moveLeft();
